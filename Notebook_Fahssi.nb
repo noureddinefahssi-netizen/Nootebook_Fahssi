@@ -1,0 +1,104 @@
+(* ============================================================ *)
+(* Permanents of Squarefree Hankel Matrices                     *)
+(* Code Mathematica 14.0                                        *)
+(* ============================================================ *)
+
+(* ------------------------------------------------------------ *)
+(* 1. Indicateur des entiers sans facteur carré                 *)
+(* ------------------------------------------------------------ *)
+mu2[m_Integer] := Boole[SquareFreeQ[m]];
+
+(* ------------------------------------------------------------ *)
+(* 2. Matrice de Hankel S_n = [mu^2(i+j)]                       *)
+(* ------------------------------------------------------------ *)
+S[n_Integer] := Table[mu2[i + j], {i, 1, n}, {j, 1, n}];
+
+(* ------------------------------------------------------------ *)
+(* 3. Permanent Q_n = per(S_n)                                  *)
+(* ------------------------------------------------------------ *)
+Q[n_Integer] := Permanent[S[n]];
+
+(* ------------------------------------------------------------ *)
+(* 4. Matrice de Möbius signée M_n = [mu(i+j)]                  *)
+(* ------------------------------------------------------------ *)
+M[n_Integer] := Table[MoebiusMu[i + j], {i, 1, n}, {j, 1, n}];
+
+(* ------------------------------------------------------------ *)
+(* 5. Permanent signé P_n = per(M_n)                            *)
+(* ------------------------------------------------------------ *)
+P[n_Integer] := Permanent[M[n]];
+
+(* ------------------------------------------------------------ *)
+(* 6. Quantités auxiliaires pour la monotonie stricte           *)
+(* ------------------------------------------------------------ *)
+(* t_n = nombre d'entiers sans facteur carré dans [n+2, 2n+1] *)
+t[n_Integer] := Count[Range[n + 2, 2 n + 1], _?SquareFreeQ];
+
+(* Degré minimum dans le graphe biparti G_n *)
+dMin[n_Integer] := Min[
+  Table[
+    Sum[Boole[SquareFreeQ[i + j]], {j, 1, n}],
+    {i, 1, n}
+  ]
+];
+
+(* Existence d'un témoin pair m <= n tel que m+n+1 soit sans facteur carré *)
+evenWitness[n_Integer] := AnyTrue[
+  Range[1, n],
+  EvenQ[#] && SquareFreeQ[# + n + 1] &
+];
+
+(* ------------------------------------------------------------ *)
+(* 7. Vérifications pour la plage finie                         *)
+(* ------------------------------------------------------------ *)
+(* Exceptions pour t_n <= n/2 *)
+exceptionsT = Select[Range[2, 6181], t[#] <= #/2 &]
+(* Résultat attendu : {2, 4, 6, 14} *)
+
+(* Exceptions pour dMin[n] <= n/2 *)
+exceptionsD = Select[Range[2, 6181], dMin[#] <= #/2 &]
+(* Résultat attendu : {2, 6, 14} *)
+
+(* Vérification du témoin pair pour 2 <= n <= 877 *)
+AllTrue[Range[2, 877], evenWitness]
+(* Résultat attendu : True *)
+
+(* ------------------------------------------------------------ *)
+(* 8. Valeurs exceptionnelles de Q_n                            *)
+(* ------------------------------------------------------------ *)
+Table[{n, Q[n], Q[n + 1]}, {n, {2, 4, 6, 14}}]
+(* Résultat attendu :
+   {{2, 1, 2}, {4, 9, 20}, {6, 55, 205}, {14, 136484073, 960485193}} *)
+
+(* ------------------------------------------------------------ *)
+(* 9. Seuils explicites                                         *)
+(* ------------------------------------------------------------ *)
+alpha = 6/Pi^2;
+
+(* Seuil pour t_n > n/2 *)
+FindRoot[(alpha - 1/2) n == 6 Sqrt[2 n + 1], {n, 6000}]
+(* ≈ 6181.1 *)
+
+(* Seuil pour dMin[n] > n/2 *)
+FindRoot[(alpha - 1/2) n == 3 (Sqrt[2] + 1) Sqrt[n], {n, 4000}]
+(* ≈ 4503.2 *)
+
+(* Seuil pour le témoin pair *)
+FindRoot[(2/Pi^2) n == 3 Sqrt[2] Sqrt[2 n + 1], {n, 800}]
+(* ≈ 877.2 *)
+
+(* ------------------------------------------------------------ *)
+(* 10. Table 1 : Q_n et P_n pour quelques n                     *)
+(* Attention : n = 30 peut être très lent.                      *)
+(* ------------------------------------------------------------ *)
+Table[
+  {
+    n,
+    Q[n],
+    P[n],
+    (Q[n]/n!)^(1/n),
+    (Abs[P[n]]/n!)^(1/n),
+    -1/n Log[Abs[P[n]]/Q[n]]
+  },
+  {n, {4, 5, 6, 8, 12, 13, 14, 15, 20, 21, 30}}
+]
